@@ -103,3 +103,187 @@ background-color: #111111;
 .leaflet-control-attribution {
 color: #00fff7 !important;
 }
+
+/* Body */
+body {
+  background-color: #0f0f0f;
+  color: #00fff7;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+}
+
+/* Navbar */
+.nav-bar {
+  background-color: #111111;
+  border-bottom: 2px solid #00fff7;
+  padding: 1rem;
+}
+
+.logo {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00fff7;
+}
+
+.menu a {
+  color: #00fff7;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.menu a:hover {
+  color: #ff00ff;
+}
+
+/* Header */
+.header {
+  background-color: #1a1a1a;
+  border-bottom: 2px solid #00fff7;
+  padding: 1rem 0;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00fff7;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+/* Button */
+.btn-check {
+  background-color: #00fff7;
+  color: #0f0f0f;
+  font-weight: bold;
+  border: 2px solid #00fff7;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-check:hover {
+  background-color: #ff00ff;
+  border-color: #ff00ff;
+  box-shadow: 0 0 10px #ff00ff;
+}
+
+/* Lista DNS */
+.bad-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Card DNS */
+.packet-card {
+  background-color: #222222;
+  border: 1px solid #00fff7;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.packet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.packet-domain {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #00fff7;
+}
+
+.packet-date {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.packet-reason {
+  font-size: 0.875rem;
+  color: #ff9900;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Map container */
+#map {
+  flex: 1;
+  width: 100%;
+}
+
+/* Navbar */
+.nav-bar {
+  background-color: #1f2937; /* dark gray */
+  border-bottom: 2px solid #06b6d4; /* cyan border */
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #06b6d4;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 1rem;
+  background-color: #111827; /* slightly darker */
+  border-bottom: 2px solid #06b6d4;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.header-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #22d3ee; /* cyan-300 */
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Linkuri */
+.nav-link {
+  color: white;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: #38bdf8; /* cyan-300 */
+}
