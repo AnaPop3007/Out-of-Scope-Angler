@@ -8,49 +8,29 @@
   <link rel="icon" type="image/png" href="images/logo.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    #map {
-      flex: 1; /* Ocupă tot spațiul rămas pe verticală */
-      width: 100%;
-    }
-  </style>
 </head>
 <body class="bg-gray-900 text-white font-mono h-screen flex flex-col">
 
   <!-- Navbar -->
   <nav class="nav-bar flex justify-between items-center p-4">
-  <div class="flex items-center gap-6">
-    <!-- LOGO + TITLU -->
-    <div class="flex items-center gap-3">
-      <img src="images/logo.png" alt="Logo DNS" class="w-10 h-10">
-      <span class="text-2xl font-bold text-cyan-400">Phishing At Bay</span>
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-3">
+        <img src="images/logo.png" alt="Logo DNS" class="logo">
+        <span class="site-title">Phishing At Bay</span>
+      </div>
+      <ul class="flex gap-4">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="harta.html" class="nav-link">Harta</a></li>
+        <li><a href="conexiuni.html" class="nav-link">Conexiuni</a></li>
+        <li><a href="statistici.html" class="nav-link">Statistici</a></li>
+      </ul>
     </div>
-
-    <!-- MENIU -->
-    <ul class="flex gap-4">
-      <li><a href="index.html" class="nav-link">Home</a></li>
-      <li><a href="harta.html" class="nav-link">Harta</a></li>
-      <li><a href="conexiuni.html" class="nav-link">Conexiuni</a></li>
-      <li><a href="statistici.html" class="nav-link">Statistici</a></li>
-    </ul>
-  </div>
-</nav>
-
+  </nav>
 
   <!-- Titlu principal -->
-  <header class="text-center py-4 bg-gray-850 border-b border-cyan-400 shadow-md">
-    <h1 class="text-3xl font-bold text-cyan-300 tracking-wide">Harta DNS</h1>
-    <p class="text-gray-400 text-sm mt-1">Vizualizare globală a serverelor DNS și IP-urilor active</p>
+  <header class="header">
+    <h1 class="header-title">Harta DNS</h1>
+    <p class="header-subtitle">Vizualizare globală a serverelor DNS și IP-urilor active</p>
   </header>
 
   <!-- Container hartă -->
@@ -83,6 +63,36 @@
         .bindPopup(`<b>${entry.ip}</b><br>${entry.desc}`);
     });
 
+    // Conexiuni cu status
+    const connections = [
+      { from: ipData[0], to: ipData[1], status: 'safe' },
+      { from: ipData[1], to: ipData[2], status: 'medium' },
+      { from: ipData[0], to: ipData[2], status: 'danger' }
+    ];
+
+    function getColor(status) {
+      switch(status) {
+        case 'safe': return 'green';
+        case 'medium': return 'yellow';
+        case 'danger': return 'red';
+        default: return 'white';
+      }
+    }
+
+    connections.forEach(conn => {
+      const polyline = L.polyline(
+        [[conn.from.lat, conn.from.lon], [conn.to.lat, conn.to.lon]],
+        { color: getColor(conn.status), weight: 3, opacity: 0.8, dashArray: '10,10' }
+      ).addTo(map);
+
+      // animație dash
+      let offset = 0;
+      setInterval(() => {
+        offset = (offset - 1) % 20;
+        polyline.setStyle({ dashOffset: offset });
+      }, 50);
+    });
+
     async function loadIPs() {
       try {
         const response = await fetch('http://localhost:8000/api/ips');
@@ -101,3 +111,4 @@
 
 </body>
 </html>
+    

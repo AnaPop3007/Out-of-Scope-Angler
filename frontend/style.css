@@ -224,3 +224,66 @@ body {
   font-size: 0.875rem;
   color: #ff9900;
 }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Map container */
+#map {
+  flex: 1;
+  width: 100%;
+}
+
+/* Navbar */
+.nav-bar {
+  background-color: #1f2937; /* dark gray */
+  border-bottom: 2px solid #06b6d4; /* cyan border */
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #06b6d4;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 1rem;
+  background-color: #111827; /* slightly darker */
+  border-bottom: 2px solid #06b6d4;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.header-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #22d3ee; /* cyan-300 */
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Linkuri */
+.nav-link {
+  color: white;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: #38bdf8; /* cyan-300 */
+}
