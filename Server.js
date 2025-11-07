@@ -1,22 +1,36 @@
 const express = require("express");
+const { spawn } = require("child_process");
 const app = express();
 
-// Serve static files (HTML, CSS, JS) from "public" folder
 app.use(express.static("public"));
+app.use(express.json()); // to parse JSON POST requests
 
-// Example data to simulate DNS packet info
-let dnsPackets = [
-  { id: 1, query: "example.com", status: "Resolved", time: "12:30:02" },
-  { id: 2, query: "google.com", status: "Resolved", time: "12:30:05" },
-  { id: 3, query: "openai.com", status: "Timeout", time: "12:30:07" },
-];
+// API route to process link
+app.post("/api/process-link", (req, res) => {
+  const link = req.body.link;
+  if (!link) return res.status(400).json({ error: "No link provided" });
 
-// API route to send data to front-end
-app.get("/api/dns", (req, res) => {
-  res.json(dnsPackets);
+  // Call Python script with the link as parameter
+  const pythonProcess = spawn("python", ["process_link.py", link]);
+
+  let output = "";
+  pythonProcess.stdout.on("data", (data) => {
+    output += data.toString();
+  });
+
+  pythonProcess.stderr.on("data", (data) => {
+    console.error("Python error:", data.toString());
+  });
+
+  pythonProcess.on("close", (code) => {
+    if (code === 0) {
+      res.json({ result: output.trim() });
+    } else {
+      res.status(500).json({ error: "Python script failed" });
+    }
+  });
 });
 
-// Start server
 app.listen(9999, () => {
-  console.log(" Server running on http://localhost:9999");
+  console.log("Server running on http://localhost:9999");
 });

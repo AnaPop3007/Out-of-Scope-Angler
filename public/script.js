@@ -9,4 +9,3 @@ links.forEach(link => {
         targetSection.scrollIntoView({ behavior: 'smooth' });
     });
 });
-
