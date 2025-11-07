@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Statistici incidente azi</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .container { max-width: 800px; margin: auto; }
+    .pie-container { width: 400px; height: 400px; margin: 0 auto; padding: 10px; display: flex; justify-content: center; align-items: center; }
+    .alerts { margin-top: 20px; }
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #000000;
+      background: rgba(56, 189, 248, 0.08);
+      margin-bottom: 8px;
+    }
+    .severity-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex: 0 0 12px;
+    }
+    .high { background: #ef4444; }
+    .medium { background: #f59e0b; }
+    .low { background: #3b82f6; }
+    .pie-legend { display: flex; gap: 15px; margin-top: 10px; }
+    .pie-legend div {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9em;
+    }
+    a { text-decoration: none; color: #38bdf8; transition: color 0.2s; }
+    a:hover { color: #0ea5e9; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <nav class="nav-bar flex justify-between items-center p-4 border-b border-cyan-400">
+    <div class="flex items-center gap-6">
+      <span class="text-2xl font-bold text-cyan-400">DNS Dashboard</span>
+      <ul class="flex gap-4">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="harta.html" class="nav-link">Harta</a></li>
+        <li><a href="conexiuni.html" class="nav-link">Conexiuni</a></li>
+        <li><a href="statistici.html" class="nav-link">Statistici</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-12">
+    <h1 class="mb-6 text-center text-3xl">Statistici incidente — <span id="today-date"></span></h1>
+
+    <div class="pie-container">
+      <canvas id="severityChart" width="400" height="240"></canvas>
+    </div>
+
+    <div class="pie-legend flex justify-center mt-4 gap-6">
+      <div class="flex items-center gap-2">
+        <span class="severity-dot high w-4 h-4"></span> HIGH
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="severity-dot medium w-4 h-4"></span> MEDIUM
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="severity-dot low w-4 h-4"></span> LOW
+      </div>
+    </div>
+
+    <div class="alerts mt-12">
+      <h2>Site-uri problemă (azi)</h2>
+      <div id="alerts-list" class="flex flex-col gap-4"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ---------- Demo fallback data ----------
+    const demoStats = { counts: { high: 3, medium: 5, low: 12 } };
+    const demoAlerts = [
+      { url: 'http://192.0.2.1/login', ip: '192.0.2.1', severity: 'high', evidence: ['ip_in_hostname','no_ssl'] },
+      { url: 'http://secure-pay.example.co', ip: '198.51.100.5', severity: 'medium', evidence: ['typosquat'] },
+      { url: 'http://promo.example.info/very/long/path?x=1', ip: '203.0.113.9', severity: 'low', evidence: ['long_url'] }
+    ];
+
+    // ---------- Helpers ----------
+    function setTodayDate() {
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('today-date').textContent = today;
+      return today;
+    }
+
+    function renderPieChart(counts) {
+      const ctx = document.getElementById('severityChart').getContext('2d');
+      // dacă există un chart anterior îl distrugem (în caz că re-rulam)
+      if (window.currentChart) {
+        window.currentChart.destroy();
+      }
+      window.currentChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['HIGH','MEDIUM','LOW'],
+          datasets: [{
+            data: [counts.high || 0, counts.medium || 0, counts.low || 0],
+            backgroundColor: ['#ef4444','#f59e0b','#3b82f6']
+          }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false } // dezactivează legenda default
+            }
+}
+
+      });
+    }
+
+    function renderAlertsList(alerts) {
+      const alertsList = document.getElementById('alerts-list');
+      alertsList.innerHTML = '';
+      if (!alerts || alerts.length === 0) {
+        alertsList.innerHTML = '<div class="text-center text-gray-600">Nu există alerte pentru azi.</div>';
+        return;
+      }
+      alerts.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'alert-item';
+        // sanitize minimal: encode text nodes (simple approach)
+        const urlText = document.createTextNode(a.url);
+        const ipText = document.createTextNode(a.ip || '');
+        const reasons = Array.isArray(a.evidence) ? a.evidence.join(', ') : a.evidence || '';
+
+        // build inner HTML using safe nodes
+        const link = document.createElement('a');
+        link.href = a.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.appendChild(urlText);
+
+        div.innerHTML = `<div class="severity-dot ${a.severity}"></div>`;
+        const right = document.createElement('div');
+        right.appendChild(link);
+        right.appendChild(document.createElement('br'));
+        const smallIp = document.createElement('small');
+        smallIp.appendChild(ipText);
+        right.appendChild(smallIp);
+        right.appendChild(document.createElement('br'));
+        const smallReasons = document.createElement('small');
+        smallReasons.innerHTML = `<strong>Reasons:</strong> ${escapeHtml(reasons)}`;
+        right.appendChild(smallReasons);
+
+        div.appendChild(right);
+        alertsList.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    // ---------- Load from backend with fallback ----------
+    async function loadFromBackend(todayDate) {
+      try {
+        // parallel requests
+        const [statsResp, alertsResp] = await Promise.all([
+          fetch(`http://localhost:8000/api/statistics`),
+          fetch(`http://localhost:8000/api/alerts?date=${todayDate}`)
+        ]);
+
+        if (!statsResp.ok || !alertsResp.ok) {
+          throw new Error('One or more endpoints returned error');
+        }
+
+        const stats = await statsResp.json();
+        const alerts = await alertsResp.json();
+
+        // assume API returns structure: stats.alerts_summary.severity.* and alerts is array
+        const counts = {
+          high: stats?.alerts_summary?.severity?.high ?? 0,
+          medium: stats?.alerts_summary?.severity?.medium ?? 0,
+          low: stats?.alerts_summary?.severity?.low ?? 0
+        };
+
+        renderPieChart(counts);
+        renderAlertsList(Array.isArray(alerts) ? alerts : []);
+
+      } catch (err) {
+        console.warn('Backend fetch failed, using demo data. Error:', err);
+        // fallback to demo
+        renderPieChart({ high: demoStats.counts.high, medium: demoStats.counts.medium, low: demoStats.counts.low });
+        renderAlertsList(demoAlerts);
+      }
+    }
+
+    // ---------- Initialize ----------
+    (function init() {
+      const todayDate = setTodayDate();
+      loadFromBackend(todayDate);
+    })();
+
+  </script>
+</body>
+</html>
