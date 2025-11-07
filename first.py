@@ -5,8 +5,7 @@ import requests
 import math
 import socket
 import ssl
-from datetime import datetime
-from bs4 import BeautifulSoup
+from datetime import datetime, timezone # Am adăugat timezone
 
 # --- PASUL 1: Definește variabilele de risc ---
 SUSPICIOUS_KEYWORDS = [
@@ -19,6 +18,13 @@ HIGH_RISK_TLDS = {
     '.xyz', '.top', '.loan', '.club', '.stream', '.gq', '.tk', '.ml', '.ga', '.cf',
     '.work', '.online', '.site', '.website', '.click', '.link', '.live', '.space',
     '.buzz', '.men', '.icu', '.fit', '.vip', '.monster'
+}
+
+# (v3.5) Hartă redusă DOAR la caractere de atac
+ASCII_HOMOGLYPHS_MAP = {
+    '0': 'o',
+    '1': 'l',
+    '5': 's'
 }
 
 # Header pentru a simula un browser real
@@ -69,6 +75,7 @@ def calculate_entropy(text):
     return entropy
 
 
+# --- PASUL 4: Funcții Ajutătoare (Dinamice - "Live") ---
 
 def get_certificate_age(hostname):
     """
@@ -77,18 +84,20 @@ def get_certificate_age(hostname):
     """
     try:
         context = ssl.create_default_context()
-       
+        
         with socket.create_connection((hostname, 443), timeout=4) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
-                # Convertim data emiterii în obiect datetime
-                issue_date = datetime.strptime(cert['notBefore'], '%b %d %H:%M:%S %Y %Z')
-                # Calculăm vechimea
-                age = (datetime.utcnow() - issue_date).days
+                
+                # (v3.5 - REPARAT) 
+                issue_date_str = " ".join(cert['notBefore'].split()[:-1])
+                issue_date = datetime.strptime(issue_date_str, '%b %d %H:%M:%S %Y')
+                
+                age = (datetime.now(timezone.utc) - issue_date.replace(tzinfo=timezone.utc)).days
                 return age
-    except Exception:
-        # Erori posibile: nu are SSL, timeout, certificat invalid etc.
-        return -1 # Semnalăm că nu am putut verifica
+                
+    except Exception as e:
+        return -1 
 
 def check_for_password_field(url):
     """
@@ -97,15 +106,12 @@ def check_for_password_field(url):
     try:
         response = requests.get(url, headers=REQUEST_HEADERS, timeout=3, allow_redirects=True)
         soup = BeautifulSoup(response.text, 'html.parser')
-        # Caută toate input-urile de tip "password"
         password_inputs = soup.find_all('input', {'type': 'password'})
-        
         return len(password_inputs) > 0
     except Exception:
-        # Erori de rețea, timeout, etc.
         return False
 
-# --- PASUL 5: Funcția principală de Risc (v3.1) ---
+# --- PASUL 5: Funcția principală de Risc (v3.6 - REPARATĂ) ---
 def get_risk_score(suspicious_url, legitimate_domains):
     """Calculează un scor de risc bazat pe reguli statice ȘI dinamice."""
     
@@ -135,6 +141,30 @@ def get_risk_score(suspicious_url, legitimate_domains):
         total_risk_score += 50
         alerts.append(f"Similaritate mare ({best_fuzzy_score}%) cu {best_match}")
 
+    # --- REGULA 1.5: Atac Homoglyph ASCII (v3.6 - REPARATĂ) ---
+    if not is_known_domain and best_match: 
+        
+        normalized_chars = []
+        replacements_made = False
+        for char in clean_url:
+            if char in ASCII_HOMOGLYPHS_MAP:
+                normalized_chars.append(ASCII_HOMOGLYPHS_MAP[char])
+                replacements_made = True
+            else:
+                normalized_chars.append(char)
+        
+        if replacements_made:
+            normalized_clean_url = "".join(normalized_chars)
+            normalized_score = fuzz.ratio(normalized_clean_url, best_match)
+            
+            # --- MODIFICARE CHEIE (v3.6) ---
+            # Am scăzut pragul de la 95 la 80 pentru a prinde 'g00glle' (93)
+            # și 'micros0ft-support' (82)
+            if normalized_score > 80: 
+                total_risk_score += 80 # Penalizare mare
+                alerts.append(f"Atac Homoglyph ASCII detectat (ex: '0'->'o'). Seamănă ({normalized_score}%) cu {best_match}")
+
+
     # REGULA 2 (Actualizată): Cuvinte Cheie Suspecte (Verifică tot URL-ul)
     url_for_keyword_check = suspicious_url.lower()
     for keyword in SUSPICIOUS_KEYWORDS:
@@ -158,10 +188,13 @@ def get_risk_score(suspicious_url, legitimate_domains):
         alerts.append("Conține caractere non-standard (ex: diacritice, atac homoglyph)")
         
     # REGULA 6: TLD de Risc Înalt
-    tld = '.' + clean_url.split('.')[-1]
-    if tld in HIGH_RISK_TLDS:
-        total_risk_score += 35
-        alerts.append(f"Folosește un TLD de mare risc: '{tld}'")
+    try:
+        tld = '.' + clean_url.split('.')[-1]
+        if tld in HIGH_RISK_TLDS:
+            total_risk_score += 35
+            alerts.append(f"Folosește un TLD de mare risc: '{tld}'")
+    except Exception:
+        pass # Ignoră dacă nu poate extrage TLD
         
     # REGULA 7: Prea multe cratime sau puncte (Subdomenii)
     if clean_url.count('.') > 4:
@@ -172,77 +205,98 @@ def get_risk_score(suspicious_url, legitimate_domains):
          alerts.append(f"Prea multe cratime: {clean_url.count('-')}")
 
     # REGULA 8: Entropie Ridicată (Pare aleatoriu)
-    domain_part = ".".join(clean_url.split('.')[:-1])
-    entropy = calculate_entropy(domain_part)
-    if entropy > 3.5: # 3.5 e un prag bun pentru nume de domenii
-        total_risk_score += 25
-        alerts.append(f"Entropie ridicată ({entropy:.2f}), pare generat aleatoriu")
+    try:
+        domain_part_list = clean_url.split('.')[:-1]
+        if domain_part_list: 
+            domain_part = ".".join(domain_part_list)
+            entropy = calculate_entropy(domain_part)
+            if entropy > 3.5:
+                total_risk_score += 25
+                alerts.append(f"Entropie ridicată ({entropy:.2f}), pare generat aleatoriu")
+    except Exception:
+        pass 
+
     
     # --- Regulile DINAMICE (Live, pot fi mai lente) ---
-    # Le rulăm doar dacă nu este un site cunoscut
     if not is_known_domain:
         
-        # REGULA 9: Vechimea Certificatului SSL
+        # REGULA 9: Vechimea Certificatului SSL (CALIBRAT)
         cert_age_days = get_certificate_age(hostname)
         if cert_age_days == -1:
             total_risk_score += 10 # Penalizare mică pentru HTTP sau eroare
             alerts.append("Nu s-a putut verifica certificatul SSL (HTTP sau eroare)")
-        elif cert_age_days < 7: # Certificat creat în ultima săptămână!
-            total_risk_score += 50
+        elif cert_age_days < 7: 
+            total_risk_score += 30 
             alerts.append(f"Certificat SSL extrem de nou (creat acum {cert_age_days} zile)")
             
-        # REGULA 10 (Actualizată): Pagină conține parolă SAU cale de login
+        # REGULA 10 (Actualizată): Pagină conține parolă (CALIBRAT)
         path_has_login_keyword = any(kw in url_for_keyword_check for kw in ['/login', '/signin', '/auth'])
         
         if check_for_password_field(suspicious_url):
-            total_risk_score += 40
+            total_risk_score += 25 
             alerts.append("Pagină nouă/necunoscută care cere o parolă (detectat în HTML)")
         elif path_has_login_keyword:
-            # Dacă scanarea HTML eșuează (poate e JS),
-            # dar calea URL conține '/login', e la fel de suspect
             total_risk_score += 25
             alerts.append(f"Pagină nouă/necunoscută cu o cale URL suspectă de login")
 
     # --- Status Final ---
     status = 'Safe'
-    if total_risk_score >= 90: # Prag mai mare
+    
+    if is_known_domain:
+        status = 'Safe'
+        total_risk_score = 0
+        alerts = ['Site cunoscut și legitim.']
+    elif total_risk_score >= 90: 
         status = 'DANGEROUS'
-    elif total_risk_score >= 50: # Prag mai mare
+    elif total_risk_score >= 50: 
         status = 'Suspicious'
+    
+    homoglyph_alert_triggered = any('Atac Homoglyph ASCII detectat' in s for s in alerts)
 
     return {
         'url_testat': suspicious_url,
         'risk_score': total_risk_score,
         'status': status,
-        'potential_match': best_match if best_fuzzy_score > 90 else 'None',
+        'potential_match': best_match if (best_fuzzy_score > 90 or homoglyph_alert_triggered) else 'None',
         'alerts_triggered': alerts
     }
 
-# --- PASUL 6: Blocul de Testare (Actualizat) ---
+# --- PASUL 6: Blocul de Testare (Actualizat v3.6) ---
 if __name__ == "__main__":
     
-    # Încarcă lista de domenii o singură dată la început
     LEGITIMATE_URLS = load_top_domains()
     
     if LEGITIMATE_URLS:
-        print("\n--- Rularea testelor pentru Motorul de Risc v3.1 (Reparat) ---")
+        print("\n--- Rularea testelor pentru Motorul de Risc v3.6 (REPARAT) ---")
         
-        # Test 1: Impostor (Fuzzy + Cuvinte Cheie)
+        # Test 1: Corect (Dangerous)
         test_1 = "http://login-google.com.security-update.net/verify-account"
         print(f"\nTest 1 (Impostor) ({test_1}):\n {get_risk_score(test_1, LEGITIMATE_URLS)}")
         
-        # Test 2: "Denumirea ciudată" (nouă)
-        test_2 = "https://www.pltfrm.com/login" # Un site legitim, dar necunoscut
+        # Test 2: Corect (Suspicious)
+        test_2 = "https://www.pltfrm.com/login" 
         print(f"\nTest 2 (Site Necunoscut cu Login) ({test_2}):\n {get_risk_score(test_2, LEGITIMATE_URLS)}")
 
-        # Test 3: Site normal (ar trebui să fie 'Safe')
-        test_3 = "https://www.google.com"
+        # Test 3: Corect (Safe)
+        test_3 = "https://www.google.com/login"
         print(f"\nTest 3 (Site Sigur) ({test_3}):\n {get_risk_score(test_3, LEGITIMATE_URLS)}")
         
-        # Test 4: Atac Homoglyph (cu diacritică)
-        test_4 = "bancă-mea.ro"
-        print(f"\nTest 4 (Homoglyph) ({test_4}):\n {get_risk_score(test_4, LEGITIMATE_URLS)}")
+        # Test 4: Corect (Dangerous)
+        test_4 = "http://bancă-mea.ro/login"
+        print(f"\nTest 4 (Homoglyph Non-ASCII) ({test_4}):\n {get_risk_score(test_4, LEGITIMATE_URLS)}")
 
-        # Test 5: Atac cu entropie și TLD de risc
+        # Test 5: Corect (Suspicious/Dangerous)
         test_5 = "http://a8sd9as8d9a8sjd9k.xyz/login"
         print(f"\nTest 5 (Entropie + TLD Risc) ({test_5}):\n {get_risk_score(test_5, LEGITIMATE_URLS)}")
+
+        # Test 6: Corect (Dangerous)
+        test_6 = "https://www.g00gle.com/support"
+        print(f"\nTest 6 (Test 'g00gle.com') ({test_6}):\n {get_risk_score(test_6, LEGITIMATE_URLS)}")
+        
+        # Test 7: Corect (Dangerous)
+        test_7 = "https://www.micros0ft-support.com/login" 
+        print(f"\nTest 7 (Homoglyph ASCII Combinat) ({test_7}):\n {get_risk_score(test_7, LEGITIMATE_URLS)}")
+
+        # Test 8: (NOU) Testul tău din imagine - Corect (Dangerous)
+        test_8 = "https://www.g00glle.com/login" 
+        print(f"\nTest 8 (Test 'g00glle.com') ({test_8}):\n {get_risk_score(test_8, LEGITIMATE_URLS)}")
