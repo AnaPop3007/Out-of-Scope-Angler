@@ -34,7 +34,7 @@
   </header>
 
   <!-- Container hartă -->
-  <div id="map"></div>
+  <div id="map" class="flex-1"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
@@ -52,23 +52,22 @@
       maxZoom: 19
     }).addTo(map);
 
-    const ipData = [
-      { ip: "8.8.8.8", lat: 37.751, lon: -97.822, desc: "Google DNS" },
-      { ip: "1.1.1.1", lat: -33.8688, lon: 151.2093, desc: "Cloudflare DNS" },
-      { ip: "89.136.22.10", lat: 44.4268, lon: 26.1025, desc: "Romania IP" },
+    // Nod fix România
+    const romania = { ip: "89.136.22.10", lat: 44.4268, lon: 26.1025, desc: "Romania DNS" };
+    L.marker([romania.lat, romania.lon]).addTo(map)
+      .bindPopup(`<b>${romania.ip}</b><br>${romania.desc}`);
+
+    // Noduri DNS fixe (aproximativ pe continente)
+    const dnsServers = [
+      { ip: "8.22.51.8", desc: "Google DNS", status: "safe", lat: 37.751, lon: -97.822 },       // SUA
+      { ip: "12.45.112.200", desc: "Cloudflare DNS", status: "safe", lat: -30.8688, lon: 145.2093 }, // Australia
+      { ip: "208.67.222.222", desc: "OpenDNS", status: "medium", lat: 45.7100, lon: -76.0060 }, // NY, SUA
+      { ip: "9.23.112.212", desc: "Quad9 DNS", status: "danger", lat: 48.8566, lon: 2.3522 },       // Paris, Europa
+      { ip: "77.88.8.8", desc: "Yandex DNS", status: "medium", lat: 55.7558, lon: 37.6173 },  // Moscova
     ];
 
-    ipData.forEach(entry => {
-      L.marker([entry.lat, entry.lon]).addTo(map)
-        .bindPopup(`<b>${entry.ip}</b><br>${entry.desc}`);
-    });
-
-    // Conexiuni cu status
-    const connections = [
-      { from: ipData[0], to: ipData[1], status: 'safe' },
-      { from: ipData[1], to: ipData[2], status: 'medium' },
-      { from: ipData[0], to: ipData[2], status: 'danger' }
-    ];
+    const markers = [];
+    const lines = [];
 
     function getColor(status) {
       switch(status) {
@@ -79,36 +78,29 @@
       }
     }
 
-    connections.forEach(conn => {
-      const polyline = L.polyline(
-        [[conn.from.lat, conn.from.lon], [conn.to.lat, conn.to.lon]],
-        { color: getColor(conn.status), weight: 3, opacity: 0.8, dashArray: '10,10' }
-      ).addTo(map);
+    // Adaugă noduri pe hartă și creează linii către România
+    dnsServers.forEach(server => {
+      const marker = L.marker([server.lat, server.lon]).addTo(map)
+        .bindPopup(`<b>${server.ip}</b><br>${server.desc}`);
+      markers.push(marker);
 
-      // animație dash
+      const line = L.polyline([[romania.lat, romania.lon], [server.lat, server.lon]], {
+        color: getColor(server.status),
+        weight: 3,
+        opacity: 0.8,
+        dashArray: '10,10'
+      }).addTo(map);
+
+      // animație linie
       let offset = 0;
       setInterval(() => {
         offset = (offset - 1) % 20;
-        polyline.setStyle({ dashOffset: offset });
+        line.setStyle({ dashOffset: offset });
       }, 50);
+
+      lines.push(line);
     });
 
-    async function loadIPs() {
-      try {
-        const response = await fetch('http://localhost:8000/api/ips');
-        const data = await response.json();
-        data.forEach(entry => {
-          L.marker([entry.lat, entry.lon]).addTo(map)
-            .bindPopup(`<b>${entry.ip}</b><br>${entry.desc}`);
-        });
-      } catch (error) {
-        console.error('Eroare la încărcarea IP-urilor:', error);
-      }
-    }
-
-    loadIPs();
   </script>
-
 </body>
 </html>
-    
