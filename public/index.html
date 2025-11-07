@@ -61,25 +61,57 @@
     const area = document.getElementById('connectionsArea');
     const packetArea = document.getElementById('packetArea');
 
-    function addConnection() {
-      const link = input.value.trim();
-      if (!link) return;
+    async function addConnection() {
+  const link = input.value.trim();
+  if (!link) return;
 
-      const card = document.createElement('div');
-      card.className = 'card-template p-6 rounded shadow bg-gray-800 border border-cyan-700';
-      card.innerHTML = `
-        <h2 class="text-xl font-bold mb-2 text-cyan-300">Date conexiune nouă</h2>
-        <p class="text-sm mb-2">Link analizat: <span class="text-cyan-400">${link}</span></p>
-        <div class="dns-info mt-2 p-3 rounded bg-gray-900">
-          <div class="flex justify-between"><span>IP:</span><span>192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}</span></div>
-          <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-bold">Active</span></div>
-          <div class="flex justify-between"><span>Pachete trimise:</span><span>${Math.floor(Math.random()*500)}</span></div>
-        </div>
-      `;
-      area.prepend(card);
-      input.value = '';
-    }
+  // 1. Trimite link-ul la Node.js (asta e corect)
+  const response = await fetch("/api/process-link", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ link })
+  });
 
+  // 2. Primește JSON-ul complex (ex: { status: 'Suspicious', risk_score: 55, ... })
+  const data = await response.json();
+
+  // 3. Creează noul card (AICI ESTE SCHIMBAREA)
+  
+  // Determină culoarea în funcție de status
+  let statusColor = 'text-green-400'; // Default: Safe
+  let borderColor = 'border-green-700';
+  if (data.status === 'Suspicious') {
+    statusColor = 'text-yellow-400';
+    borderColor = 'border-yellow-700';
+  } else if (data.status === 'DANGEROUS') {
+    statusColor = 'text-red-500';
+    borderColor = 'border-red-700';
+  }
+
+  const card = document.createElement('div');
+  card.className = `card-template p-6 rounded shadow bg-gray-800 border ${borderColor}`; // Am adăugat border-ul dinamic
+  
+  // Afișăm noile date: 'data.status' și 'data.risk_score'
+  card.innerHTML = `
+    <h2 class="text-xl font-bold mb-2 text-cyan-300">Rezultat Analiză</h2>
+    <p class="text-sm mb-2">Link: <span class="text-cyan-400">${data.url_testat}</span></p>
+    <p class="text-lg mb-2">Status: <span class="font-bold ${statusColor}">${data.status}</span></p>
+    <p class="text-sm">Scor Risc: <span class="font-bold text-white">${data.risk_score}</span></p>
+    
+        ${data.alerts_triggered && data.alerts_triggered.length > 0 ?
+      `<div class="mt-3 pt-3 border-t border-gray-700">
+        <h4 class="text-sm font-bold text-gray-400 mb-1">Alerte declanșate:</h4>
+        <ul class="list-disc list-inside text-xs text-gray-400">
+          ${data.alerts_triggered.map(alert => `<li>${alert}</li>`).join('')}
+        </ul>
+      </div>`
+      : ''
+    }
+  `;
+  
+  area.prepend(card);
+  input.value = '';
+}
     // Apăsare pe buton
     button.addEventListener('click', addConnection);
 
