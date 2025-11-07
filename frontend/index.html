@@ -14,7 +14,7 @@
     <div class="flex items-center gap-6">
       <span class="text-2xl font-bold text-cyan-400">DNS Dashboard</span>
       <ul class="flex gap-4">
-        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="index.html" class="nav-link font-bold text-cyan-400">Home</a></li>
         <li><a href="harta.html" class="nav-link">Harta</a></li>
         <li><a href="conexiuni.html" class="nav-link">Conexiuni</a></li>
         <li><a href="#" class="nav-link">Statistici</a></li>
@@ -29,22 +29,26 @@
 
       <!-- BAR PENTRU LINK + BUTON -->
       <div class="flex gap-4 mb-6">
-        <input type="text" placeholder="Introdu link..." class="input-bar flex-1 p-3 rounded">
-        <button class="btn-check px-6 py-2 rounded">Check</button>
+        <input id="linkInput" type="text" placeholder="Introdu link..." class="input-bar flex-1 p-3 rounded">
+        <button id="checkBtn" class="btn-check px-6 py-2 rounded">Check</button>
       </div>
 
-      <!-- CONEXIUNE TEMPLATE -->
-      <div class="card-template p-6 rounded shadow">
-        <h2 class="text-2xl font-bold mb-4 text-cyan-300">Date conexiune</h2>
-        <p>Aici se vor afișa datele conexiunii (template momentan).</p>
+      <!-- CONTAINER PENTRU CARDURI -->
+      <div id="connectionsContainer" class="space-y-6">
 
-        <div class="dns-info mt-4 p-4 rounded">
-          <div class="flex justify-between"><span>IP:</span><span>192.168.1.1</span></div>
-          <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-bold">Connected</span></div>
-          <div class="flex justify-between"><span>Pachete trimise:</span><span>120</span></div>
+        <!-- CARD EXEMPLU -->
+        <div class="card-template p-6 rounded shadow">
+          <h2 class="text-2xl font-bold mb-4 text-cyan-300">Date conexiune</h2>
+          <p>Aici se vor afișa datele conexiunii (template momentan).</p>
+
+          <div class="dns-info mt-4 p-4 rounded">
+            <div class="flex justify-between"><span>IP:</span><span>192.168.1.1</span></div>
+            <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-bold">Connected</span></div>
+            <div class="flex justify-between"><span>Pachete trimise:</span><span>120</span></div>
+          </div>
         </div>
-      </div>
 
+      </div>
     </div>
 
     <!-- RIGHT SIDEBAR -->
@@ -60,6 +64,51 @@
     </div>
 
   </div>
+
+  <script>
+    const checkBtn = document.getElementById('checkBtn');
+    const linkInput = document.getElementById('linkInput');
+    const connectionsContainer = document.getElementById('connectionsContainer');
+
+    checkBtn.addEventListener('click', () => {
+      const link = linkInput.value.trim();
+
+      if (!link) {
+        alert("Te rog introdu un link înainte de a verifica.");
+        return;
+      }
+
+      // Creează un card nou fictiv
+      const card = document.createElement('div');
+      card.className = 'card-template p-6 rounded shadow animate-fade-in';
+      card.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4 text-cyan-300">Date conexiune nouă</h2>
+        <p>Rezultate pentru: <span class="text-cyan-400 font-semibold">${link}</span></p>
+
+        <div class="dns-info mt-4 p-4 rounded">
+          <div class="flex justify-between"><span>IP:</span><span>${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}</span></div>
+          <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-bold">Connected</span></div>
+          <div class="flex justify-between"><span>Pachete trimise:</span><span>${Math.floor(Math.random() * 200)}</span></div>
+        </div>
+      `;
+
+      // Adaugă cardul sus în listă
+      connectionsContainer.prepend(card);
+
+      // Golește inputul
+      linkInput.value = '';
+    });
+  </script>
+
+  <style>
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.3s ease-out;
+    }
+  </style>
 
 </body>
 </html>
