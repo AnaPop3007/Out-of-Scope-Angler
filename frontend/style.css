@@ -1,0 +1,70 @@
+body {
+  background-color: #0f0f0f;
+  color: #00fff7;
+  font-family: 'Courier New', monospace;
+}
+
+.nav-bar {
+  background-color: #111111;
+  border-bottom: 2px solid #00fff7;
+}
+
+.nav-link {
+  color: #00fff7;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-link:hover {
+  color: #ff00ff;
+}
+
+.input-bar {
+  background-color: #111111;
+  border: 2px solid #00fff7;
+  color: #00fff7;
+}
+.input-bar:focus {
+  outline: none;
+  border-color: #ff00ff;
+  box-shadow: 0 0 10px #ff00ff;
+}
+
+.btn-check {
+  background-color: #00fff7;
+  color: #0f0f0f;
+  font-weight: bold;
+  border: 2px solid #00fff7;
+  transition: all 0.2s;
+}
+.btn-check:hover {
+  background-color: #ff00ff;
+  border-color: #ff00ff;
+  box-shadow: 0 0 10px #ff00ff;
+  cursor: pointer;
+}
+
+.card-template {
+  background-color: #111111;
+  border: 2px solid #00fff7;
+}
+
+.dns-info {
+  border: 1px dashed #00fff7;
+}
+
+.sidebar {
+  background-color: #111111;
+  border-left: 2px solid #00fff7;
+}
+
+.packet-card {
+  background-color: #222222;
+  padding: 0.5rem;
+  border: 1px solid #00fff7;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+.packet-card:hover {
+  border-color: #ff00ff;
+  box-shadow: 0 0 10px #ff00ff;
+}
