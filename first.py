@@ -1,5 +1,6 @@
 import csv
 import re
+from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
 import requests
 import math
