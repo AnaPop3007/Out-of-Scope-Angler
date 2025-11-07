@@ -13,7 +13,13 @@
   <!-- NAVBAR -->
   <nav class="nav-bar flex justify-between items-center p-4">
     <div class="flex items-center gap-6">
-      <span class="text-2xl font-bold text-cyan-400">DNS Dashboard</span>
+      <!-- LOGO + TITLU -->
+      <div class="flex items-center gap-3">
+        <img src="images/logo.png" alt="Logo DNS" class="w-10 h-10">
+        <span class="text-2xl font-bold text-cyan-400">Fishing At Bay</span>
+      </div>
+
+      <!-- MENIU -->
       <ul class="flex gap-4">
         <li><a href="index.html" class="nav-link">Home</a></li>
         <li><a href="harta.html" class="nav-link">Harta</a></li>
@@ -42,12 +48,8 @@
     <!-- RIGHT SIDEBAR -->
     <div class="w-80 p-4 overflow-auto sidebar">
       <h3 class="font-bold text-lg mb-4 text-cyan-300">Pachete DNS</h3>
-      <div class="space-y-3">
-        <div class="packet-card">DNS Packet 1: ...</div>
-        <div class="packet-card">DNS Packet 2: ...</div>
-        <div class="packet-card">DNS Packet 3: ...</div>
-        <div class="packet-card">DNS Packet 4: ...</div>
-        <div class="packet-card">DNS Packet 5: ...</div>
+      <div id="packetArea" class="space-y-3">
+        <!-- Pachetele DNS vor fi adăugate automat aici -->
       </div>
     </div>
 
@@ -57,6 +59,7 @@
     const input = document.getElementById('linkInput');
     const button = document.getElementById('checkBtn');
     const area = document.getElementById('connectionsArea');
+    const packetArea = document.getElementById('packetArea');
 
     function addConnection() {
       const link = input.value.trim();
@@ -73,7 +76,7 @@
           <div class="flex justify-between"><span>Pachete trimise:</span><span>${Math.floor(Math.random()*500)}</span></div>
         </div>
       `;
-      area.prepend(card); // adaugă sus
+      area.prepend(card);
       input.value = '';
     }
 
@@ -87,6 +90,36 @@
         addConnection();
       }
     });
+
+    // ---- Simulare pachete DNS ----
+    const dnsPackets = [
+      "DNS Query: google.com → 8.8.8.8",
+      "DNS Response: 142.250.74.14",
+      "DNS Query: cloudflare.com → 1.1.1.1",
+      "DNS Query: openai.com → 8.8.4.4",
+      "DNS Response: 104.22.3.243",
+      "DNS Query: example.net → 9.9.9.9",
+      "DNS Query: reddit.com → 8.8.8.8",
+      "DNS Response: 151.101.1.140",
+    ];
+
+    let packetIndex = 0;
+
+    function addPacket() {
+      const packet = document.createElement('div');
+      packet.className = 'packet-card';
+      packet.textContent = dnsPackets[packetIndex % dnsPackets.length];
+      packetArea.prepend(packet); // cel mai nou pachet sus
+      packetIndex++;
+
+      // menține max 20 pachete
+      if (packetArea.children.length > 20) {
+        packetArea.removeChild(packetArea.lastChild);
+      }
+    }
+
+    // Adaugă un pachet la fiecare 5 secunde
+    setInterval(addPacket, 5000);
   </script>
 </body>
 </html>
