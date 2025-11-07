@@ -1,0 +1,45 @@
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #e0f7fa, #ffffff);
+  margin: 0;
+}
+
+.map-container {
+  width: 700px;
+  height: 450px;
+  border: 2px solid #00796b;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+
+.map-container:hover {
+  transform: scale(1.02); /* efect mic la hover */
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Popup custom */
+.leaflet-popup-content-wrapper {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.leaflet-popup-content b {
+  color: #00796b;
+  font-size: 14px;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff;
+}

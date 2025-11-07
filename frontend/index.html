@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNS Dashboard Retro-Tech</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-mono h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <nav class="nav-bar flex justify-between items-center p-4">
+    <div class="flex items-center gap-6">
+      <!-- LOGO + TITLU -->
+      <div class="flex items-center gap-3">
+        <img src="images/logo.png" alt="Logo DNS" class="w-10 h-10">
+        <span class="text-2xl font-bold text-cyan-400">Phishing At Bay</span>
+      </div>
+
+      <!-- MENIU -->
+      <ul class="flex gap-4">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="harta.html" class="nav-link">Harta</a></li>
+        <li><a href="conexiuni.html" class="nav-link">Conexiuni</a></li>
+        <li><a href="statistici.html" class="nav-link">Statistici</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="flex flex-1 overflow-hidden">
+    
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 p-6 overflow-auto">
+      <!-- BAR PENTRU LINK + BUTON -->
+      <div class="flex gap-4 mb-6">
+        <input id="linkInput" type="text" placeholder="Introdu link..." class="input-bar flex-1 p-3 rounded">
+        <button id="checkBtn" class="btn-check px-6 py-2 rounded">Check</button>
+      </div>
+
+      <!-- ZONA CONEXIUNI -->
+      <div id="connectionsArea" class="space-y-4">
+        <!-- cardurile se vor adăuga aici -->
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="w-80 p-4 overflow-auto sidebar">
+      <h3 class="font-bold text-lg mb-4 text-cyan-300">Pachete DNS</h3>
+      <div id="packetArea" class="space-y-3">
+        <!-- Pachetele DNS vor fi adăugate automat aici -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const input = document.getElementById('linkInput');
+    const button = document.getElementById('checkBtn');
+    const area = document.getElementById('connectionsArea');
+    const packetArea = document.getElementById('packetArea');
+
+    function addConnection() {
+      const link = input.value.trim();
+      if (!link) return;
+
+      const card = document.createElement('div');
+      card.className = 'card-template p-6 rounded shadow bg-gray-800 border border-cyan-700';
+      card.innerHTML = `
+        <h2 class="text-xl font-bold mb-2 text-cyan-300">Date conexiune nouă</h2>
+        <p class="text-sm mb-2">Link analizat: <span class="text-cyan-400">${link}</span></p>
+        <div class="dns-info mt-2 p-3 rounded bg-gray-900">
+          <div class="flex justify-between"><span>IP:</span><span>192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}</span></div>
+          <div class="flex justify-between"><span>Status:</span><span class="text-green-400 font-bold">Active</span></div>
+          <div class="flex justify-between"><span>Pachete trimise:</span><span>${Math.floor(Math.random()*500)}</span></div>
+        </div>
+      `;
+      area.prepend(card);
+      input.value = '';
+    }
+
+    // Apăsare pe buton
+    button.addEventListener('click', addConnection);
+
+    // Enter în input
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addConnection();
+      }
+    });
+
+    // ---- Simulare pachete DNS ----
+    const dnsPackets = [
+      "DNS Query: google.com → 8.8.8.8",
+      "DNS Response: 142.250.74.14",
+      "DNS Query: cloudflare.com → 1.1.1.1",
+      "DNS Query: openai.com → 8.8.4.4",
+      "DNS Response: 104.22.3.243",
+      "DNS Query: example.net → 9.9.9.9",
+      "DNS Query: reddit.com → 8.8.8.8",
+      "DNS Response: 151.101.1.140",
+    ];
+
+    let packetIndex = 0;
+
+    function addPacket() {
+      const packet = document.createElement('div');
+      packet.className = 'packet-card';
+      packet.textContent = dnsPackets[packetIndex % dnsPackets.length];
+      packetArea.prepend(packet); // cel mai nou pachet sus
+      packetIndex++;
+
+      // menține max 20 pachete
+      if (packetArea.children.length > 20) {
+        packetArea.removeChild(packetArea.lastChild);
+      }
+    }
+
+    // Adaugă un pachet la fiecare 5 secunde
+    setInterval(addPacket, 5000);
+  </script>
+</body>
+</html>
