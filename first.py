@@ -27,7 +27,7 @@ REQUEST_HEADERS = {
 }
 
 # --- PASUL 2: Funcția de încărcare a listei din CSV ---
-def load_top_domains(file_name='top-1m.csv', count=10000):
+def load_top_domains(file_name='top-1m.csv', count=50000):
     """Încarcă primele 'count' domenii din fișierul Tranco CSV."""
     domains = set()
     try:
@@ -68,7 +68,7 @@ def calculate_entropy(text):
         entropy -= probability * math.log2(probability)
     return entropy
 
-# --- PASUL 4: Funcții Ajutătoare (Dinamice - "Live") ---
+
 
 def get_certificate_age(hostname):
     """
@@ -77,7 +77,7 @@ def get_certificate_age(hostname):
     """
     try:
         context = ssl.create_default_context()
-        # Am mărit timeout-ul la 4 secunde
+       
         with socket.create_connection((hostname, 443), timeout=4) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
